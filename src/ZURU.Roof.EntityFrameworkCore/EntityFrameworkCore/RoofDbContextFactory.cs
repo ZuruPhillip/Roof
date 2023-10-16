@@ -17,7 +17,7 @@ public class RoofDbContextFactory : IDesignTimeDbContextFactory<RoofDbContext>
         var configuration = BuildConfiguration();
 
         var builder = new DbContextOptionsBuilder<RoofDbContext>()
-            .UseSqlServer(configuration.GetConnectionString("Default"));
+            .UseMySql(configuration.GetConnectionString("Default"), MySqlServerVersion.LatestSupportedServerVersion);
 
         return new RoofDbContext(builder.Options);
     }
