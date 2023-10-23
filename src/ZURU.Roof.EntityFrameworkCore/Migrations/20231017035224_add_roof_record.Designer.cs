@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 using ZURU.Roof.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using ZURU.Roof.EntityFrameworkCore;
 namespace ZURU.Roof.Migrations
 {
     [DbContext(typeof(RoofDbContext))]
-    partial class RoofDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231017035224_add_roof_record")]
+    partial class add_roof_record
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1813,7 +1816,7 @@ namespace ZURU.Roof.Migrations
                         .HasColumnType("int")
                         .HasComment("1 : 轮廓点，2 ：中间点");
 
-                    b.Property<Guid>("RecordId")
+                    b.Property<Guid?>("RoofRecordId")
                         .HasColumnType("char(128)");
 
                     b.Property<float>("X")
@@ -1830,7 +1833,7 @@ namespace ZURU.Roof.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RecordId");
+                    b.HasIndex("RoofRecordId");
 
                     b.ToTable("tb_RoofPoint", null, t =>
                         {
@@ -2033,13 +2036,9 @@ namespace ZURU.Roof.Migrations
 
             modelBuilder.Entity("ZURU.Roof.Roofs.RoofPoint", b =>
                 {
-                    b.HasOne("ZURU.Roof.Roofs.RoofRecord", "RoofRecord")
+                    b.HasOne("ZURU.Roof.Roofs.RoofRecord", null)
                         .WithMany("RoofPoints")
-                        .HasForeignKey("RecordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RoofRecord");
+                        .HasForeignKey("RoofRecordId");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

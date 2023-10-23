@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ZURU.Roof.Utility\ZURU.Roof.Utility.csproj" />
     <ProjectReference Include="..\ZURU.Roof.Domain.Shared\ZURU.Roof.Domain.Shared.csproj" />
   </ItemGroup>
 
