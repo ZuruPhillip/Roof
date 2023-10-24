@@ -12,8 +12,8 @@ using ZURU.Roof.EntityFrameworkCore;
 namespace ZURU.Roof.Migrations
 {
     [DbContext(typeof(RoofDbContext))]
-    [Migration("20231023083150_update_RoofRecord")]
-    partial class update_RoofRecord
+    [Migration("20231024074247_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1799,6 +1799,90 @@ namespace ZURU.Roof.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("tb_Books", (string)null);
+                });
+
+            modelBuilder.Entity("ZURU.Roof.Paths.RobotPath", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("char(128)")
+                        .HasComment("路径Id");
+
+                    b.Property<float>("A")
+                        .HasColumnType("float")
+                        .HasComment("轴A的值");
+
+                    b.Property<string>("ActionId")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasComment("动作Id");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("int")
+                        .HasComment("动作类型： 1：机器人，2：延时，3：开关");
+
+                    b.Property<float>("B")
+                        .HasColumnType("float")
+                        .HasComment("轴B的值");
+
+                    b.Property<float>("C")
+                        .HasColumnType("float")
+                        .HasComment("轴C的值");
+
+                    b.Property<int>("Index")
+                        .HasColumnType("int")
+                        .HasComment("动作下标");
+
+                    b.Property<int>("KukaMotionType")
+                        .HasColumnType("int")
+                        .HasComment("机器人动作类型： 1：PTP，2：LIN，3：CIRC");
+
+                    b.Property<int>("NextActionType")
+                        .HasColumnType("int")
+                        .HasComment("下一个类型： 1：立即，2：当上一个动作完成时，3：当前动作完成前");
+
+                    b.Property<int>("OverWrite")
+                        .HasColumnType("int")
+                        .HasComment("倍率");
+
+                    b.Property<int>("RobotId")
+                        .HasColumnType("int")
+                        .HasComment("机械臂Id");
+
+                    b.Property<int>("S")
+                        .HasColumnType("int")
+                        .HasComment("S的值");
+
+                    b.Property<int>("SwitchActionName")
+                        .HasColumnType("int")
+                        .HasComment("开关名称编号");
+
+                    b.Property<int>("T")
+                        .HasColumnType("int")
+                        .HasComment("T的值");
+
+                    b.Property<int>("Velocity")
+                        .HasColumnType("int")
+                        .HasComment("速度");
+
+                    b.Property<float>("X")
+                        .HasColumnType("float")
+                        .HasComment("X 坐标值");
+
+                    b.Property<float>("Y")
+                        .HasColumnType("float")
+                        .HasComment("Y 坐标值");
+
+                    b.Property<float>("Z")
+                        .HasColumnType("float")
+                        .HasComment("Z 坐标值");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("tb_RobotPath", null, t =>
+                        {
+                            t.HasComment("机械臂路径记录表");
+                        });
                 });
 
             modelBuilder.Entity("ZURU.Roof.Roofs.RoofPoint", b =>

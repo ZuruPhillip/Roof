@@ -9,5 +9,7 @@ namespace ZURU.Roof
     public class RouteAddress
     {
         public const string AddRoofRecordAsync = RoofServiceConsts.RoutePrefix + "add-roof-record-async";
+
+        public const string GetRoofRecordAndSendAsync = RoofServiceConsts.RoutePrefix + "get-roof-record-and-send-async";
     }
 }

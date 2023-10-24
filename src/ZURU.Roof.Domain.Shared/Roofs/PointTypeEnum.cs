@@ -1,6 +1,6 @@
 ﻿namespace ZURU.Roof.Roofs
 {
-    public enum PointType
+    public enum PointTypeEnum
     {
         Unknown = 0,
         ContourPoint = 1,

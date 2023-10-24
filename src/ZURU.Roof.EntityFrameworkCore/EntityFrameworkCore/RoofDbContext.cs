@@ -15,7 +15,9 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using ZURU.Roof.Books;
 using ZURU.Roof.ModelBuilderExtension.Books;
+using ZURU.Roof.ModelBuilderExtension.Paths;
 using ZURU.Roof.ModelBuilderExtension.Roofs;
+using ZURU.Roof.Paths;
 using ZURU.Roof.Roofs;
 
 namespace ZURU.Roof.EntityFrameworkCore;
@@ -60,6 +62,7 @@ public class RoofDbContext :
     public DbSet<Book> Books { get; set; }
     public DbSet<RoofRecord> RoofRecords { get; set; }
     public DbSet<RoofPoint> RoofPoints { get; set; }
+    public DbSet<RobotPath> RobotPaths { get; set; }
     #endregion
 
     public RoofDbContext(DbContextOptions<RoofDbContext> options)
@@ -85,6 +88,7 @@ public class RoofDbContext :
         builder.ConfigureBooks();
         builder.ConfigureRoofRecord();
         builder.ConfigureRoofPoint();
+        builder.ConfigureRobotPath();
 
         /* Configure your own tables/entities inside here */
 

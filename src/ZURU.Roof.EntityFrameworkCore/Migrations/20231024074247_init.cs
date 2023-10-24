@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ZURU.Roof.Migrations
 {
     /// <inheritdoc />
-    public partial class created_book_entity : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -621,6 +621,61 @@ namespace ZURU.Roof.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "tb_RobotPath",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(128)", maxLength: 128, nullable: false, comment: "路径Id", collation: "ascii_general_ci"),
+                    Index = table.Column<int>(type: "int", nullable: false, comment: "动作下标"),
+                    ActionId = table.Column<string>(type: "longtext", nullable: false, comment: "动作Id")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RobotId = table.Column<int>(type: "int", nullable: false, comment: "机械臂Id"),
+                    ActionType = table.Column<int>(type: "int", nullable: false, comment: "动作类型： 1：机器人，2：延时，3：开关"),
+                    NextActionType = table.Column<int>(type: "int", nullable: false, comment: "下一个类型： 1：立即，2：当上一个动作完成时，3：当前动作完成前"),
+                    X = table.Column<float>(type: "float", nullable: false, comment: "X 坐标值"),
+                    Y = table.Column<float>(type: "float", nullable: false, comment: "Y 坐标值"),
+                    Z = table.Column<float>(type: "float", nullable: false, comment: "Z 坐标值"),
+                    A = table.Column<float>(type: "float", nullable: false, comment: "轴A的值"),
+                    B = table.Column<float>(type: "float", nullable: false, comment: "轴B的值"),
+                    C = table.Column<float>(type: "float", nullable: false, comment: "轴C的值"),
+                    S = table.Column<int>(type: "int", nullable: false, comment: "S的值"),
+                    T = table.Column<int>(type: "int", nullable: false, comment: "T的值"),
+                    KukaMotionType = table.Column<int>(type: "int", nullable: false, comment: "机器人动作类型： 1：PTP，2：LIN，3：CIRC"),
+                    Velocity = table.Column<int>(type: "int", nullable: false, comment: "速度"),
+                    OverWrite = table.Column<int>(type: "int", nullable: false, comment: "倍率"),
+                    SwitchActionName = table.Column<int>(type: "int", nullable: false, comment: "开关名称编号")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tb_RobotPath", x => x.Id);
+                },
+                comment: "机械臂路径记录表")
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "tb_RoofRecord",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(128)", maxLength: 128, nullable: false, comment: "屋顶编号", collation: "ascii_general_ci"),
+                    RoofId = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<bool>(type: "tinyint(1)", nullable: false, comment: "0 ： 停用， 1 ：启用"),
+                    ExtraProperties = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ConcurrencyStamp = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreationTime = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tb_RoofRecord", x => x.Id);
+                },
+                comment: "屋顶记录表")
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "AbpAuditLogActions",
                 columns: table => new
                 {
@@ -919,6 +974,31 @@ namespace ZURU.Roof.Migrations
                         principalTable: "OpenIddictApplications",
                         principalColumn: "Id");
                 })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "tb_RoofPoint",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(128)", maxLength: 128, nullable: false, comment: "屋顶编号", collation: "ascii_general_ci"),
+                    RecordId = table.Column<Guid>(type: "char(128)", nullable: false, collation: "ascii_general_ci"),
+                    PointIndex = table.Column<int>(type: "int", nullable: false, comment: "点下标值"),
+                    PointType = table.Column<int>(type: "int", nullable: false, comment: "1 : 轮廓点，2 ：中间点"),
+                    X = table.Column<float>(type: "float", nullable: false, comment: "X 坐标值"),
+                    Y = table.Column<float>(type: "float", nullable: false, comment: "Y 坐标值"),
+                    Z = table.Column<float>(type: "float", nullable: false, comment: "Z 坐标值")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_tb_RoofPoint", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_tb_RoofPoint_tb_RoofRecord_RecordId",
+                        column: x => x.RecordId,
+                        principalTable: "tb_RoofRecord",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                },
+                comment: "屋顶顶点记录表")
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
@@ -1222,6 +1302,11 @@ namespace ZURU.Roof.Migrations
                 name: "IX_OpenIddictTokens_ReferenceId",
                 table: "OpenIddictTokens",
                 column: "ReferenceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_tb_RoofPoint_RecordId",
+                table: "tb_RoofPoint",
+                column: "RecordId");
         }
 
         /// <inheritdoc />
@@ -1306,6 +1391,12 @@ namespace ZURU.Roof.Migrations
                 name: "tb_Books");
 
             migrationBuilder.DropTable(
+                name: "tb_RobotPath");
+
+            migrationBuilder.DropTable(
+                name: "tb_RoofPoint");
+
+            migrationBuilder.DropTable(
                 name: "AbpEntityChanges");
 
             migrationBuilder.DropTable(
@@ -1322,6 +1413,9 @@ namespace ZURU.Roof.Migrations
 
             migrationBuilder.DropTable(
                 name: "OpenIddictAuthorizations");
+
+            migrationBuilder.DropTable(
+                name: "tb_RoofRecord");
 
             migrationBuilder.DropTable(
                 name: "AbpAuditLogs");
