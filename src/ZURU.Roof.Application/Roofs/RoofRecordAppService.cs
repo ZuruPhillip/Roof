@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using ZURU.Roof.Paths;
+using ZURU.Roof.Plcs;
 using ZURU.Roof.Robots;
 using ZURU.Roof.Utility.Transforms;
 
@@ -14,11 +15,13 @@ namespace ZURU.Roof.Roofs
     {
         private readonly IRoofRecordRepository _roofRecordRepository;
         private readonly IRobotPathRepository _robotPathRepository;
+        private readonly IPlcClient _plcClient;
 
-        public RoofRecordAppService(IRoofRecordRepository roofRecordRepository, IRobotPathRepository robotPathRepository)
+        public RoofRecordAppService(IRoofRecordRepository roofRecordRepository, IRobotPathRepository robotPathRepository, IPlcClient plcClient)
         {
             _roofRecordRepository = roofRecordRepository;
             _robotPathRepository = robotPathRepository;
+            _plcClient = plcClient;
         }
 
         /// <summary>
@@ -103,16 +106,18 @@ namespace ZURU.Roof.Roofs
                     robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms1[1], velocity, overwrite));
 
                     //生成路径B->A
-                    var pathTransforms2 = PathCalculation(rightPoints, midPoints);
+                    var pathTransforms2 = PathCalculation(midPoints,rightPoints);
                     robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms2[0], velocity, overwrite));
                     robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms2[1], velocity, overwrite));
                 }
 
-                //持久化关键数据到数据库
-                var robotPathData = GenerateRobotPathData(robotPaths);
+                //持久化关键数据到数据库,保存小数点后三位
+                var robotPathData = GenerateRobotPathData(robotPaths,input.RoofId);
+                robotPathData = robotPathData.OrderBy(p => p.Index).ToList();
                 await _robotPathRepository.InsertManyAsync(robotPathData);
-                //发送数据到PLC
 
+                //发送数据到PLC
+                await _plcClient.SendPlcTasksToPlc(robotPaths);
             }
             catch (Exception ex)
             {
@@ -121,7 +126,7 @@ namespace ZURU.Roof.Roofs
         }
 
 
-        private List<RobotPath> GenerateRobotPathData(List<PlcRobotAction> actions)
+        private List<RobotPath> GenerateRobotPathData(List<PlcRobotAction> actions,string roofId)
         {
             List<RobotPath> paths = new List<RobotPath>();
             int index = 0;
@@ -129,7 +134,7 @@ namespace ZURU.Roof.Roofs
             foreach (var action in actions)
             {
                 var id = GuidGenerator.Create();
-                RobotPath path = new RobotPath(id, index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
+                RobotPath path = new RobotPath(id, roofId,index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
                     action.ActionInfo.RobotMotionInfo.EndPoint.X,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Y,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Z,
@@ -165,6 +170,27 @@ namespace ZURU.Roof.Roofs
             return originalTrasform;
         }
 
+
+        //通过标定获得的角度值
+        private float GetAngleByHeightDiff(float heightDiff)
+        {
+            float angle = 0;
+            if (heightDiff == 0)
+            {
+                angle = 0;
+            }
+            else if (heightDiff > 0)
+            {
+                //angle = 1.1f;
+                angle = 1.15f;
+            }
+            else
+            {
+                //angle = -0.94f;
+                angle = -1.15f;
+            }
+            return angle;
+        }
 
         private List<Transform> PathCalculation(List<RoofPoint> leftPoints, List<RoofPoint> rightPoints)
         {
@@ -225,7 +251,9 @@ namespace ZURU.Roof.Roofs
             var originalTransform = GetOriginalTransform();
             var angle = GetAngleByHeightDiff(heightDiff);
 
-            var startPoint = new Vector3(leftPoints[0].X, 0, leftPoints[0].Z);
+            var startPointsAveHeight = leftPoints.Select(p => p.Z).Average();
+            var endPointsAveHeight = rightPoints.Select(p => p.Z).Average();
+            var startPoint = new Vector3(leftPoints[0].X, 0,startPointsAveHeight);
             Transform st = new Transform()
             {
                 Parent = originalTransform,
@@ -234,7 +262,7 @@ namespace ZURU.Roof.Roofs
             };
             pathTransforms.Add(st);
 
-            var endPoint = new Vector3(rightPoints[0].X, 0,rightPoints[0].Z);
+            var endPoint = new Vector3(rightPoints[0].X, 0, endPointsAveHeight);
             Transform et = new Transform()
             {
                 Parent = originalTransform,
@@ -301,7 +329,6 @@ namespace ZURU.Roof.Roofs
 
             return pathTransforms;
         }
-        //安全检查
 
         private SlashDirectionEnum GetSlashDirection(List<RoofPoint> startPoints, List<RoofPoint> endPoints)
         {
@@ -321,23 +348,6 @@ namespace ZURU.Roof.Roofs
             return slashDirection;
         }
 
-        //通过标定获得的角度值
-        private float GetAngleByHeightDiff(float heightDiff)
-        {
-            float angle = 0;
-            if (heightDiff == 0)
-            {
-                angle = 0;
-            }
-            else if (heightDiff > 0)
-            {
-                angle = 1.1f;
-            }
-            else
-            {
-                angle = -0.94f;
-            }
-            return angle;
-        }
+        //安全检查
     }
 }

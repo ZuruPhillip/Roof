@@ -10,6 +10,7 @@ namespace ZURU.Roof.Paths
 {
     public class RobotPath : Entity<Guid>
     {
+        public virtual string RoofId { get; private set; }
         public virtual int Index { get; private set; }
         public virtual string? ActionId { get; private set; }
         public virtual int RobotId { get; private set; }
@@ -26,14 +27,16 @@ namespace ZURU.Roof.Paths
         public virtual KukaMotionType KukaMotionType { get; private set; }
         public virtual int Velocity { get; private set; }
         public virtual int OverWrite { get; private set; }
+        public virtual DateTime CreateTime { get; private set; }
 
         protected RobotPath()
         {
 
         }
 
-        public RobotPath(Guid id,int index,string actionId, int robotId, ActionType actionType, NextActionType nextActionType, float x, float y, float z, float a, float b, float c, int s, int t, KukaMotionType kukaMotionType, int velocity, int overWrite) : base(id)
+        public RobotPath(Guid id,string roofId,int index,string actionId, int robotId, ActionType actionType, NextActionType nextActionType, float x, float y, float z, float a, float b, float c, int s, int t, KukaMotionType kukaMotionType, int velocity, int overWrite) : base(id)
         {
+            RoofId = roofId;
             Index = index;
             ActionId = actionId;
             RobotId = robotId;
@@ -50,6 +53,7 @@ namespace ZURU.Roof.Paths
             KukaMotionType = kukaMotionType;
             Velocity = velocity;
             OverWrite = overWrite;
+            CreateTime = DateTime.Now;
         }
     }
 }

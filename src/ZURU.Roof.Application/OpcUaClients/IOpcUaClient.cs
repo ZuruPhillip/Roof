@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Opc.Ua.Client;
 
-namespace ZURU.Roof.Utility.OpcUaClients
+namespace ZURU.Roof.OpcUaClients
 {
     public interface IOpcUaClient
     {

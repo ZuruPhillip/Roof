@@ -1,4 +1,7 @@
-﻿using Volo.Abp.Account;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Opc.Ua.Configuration;
+using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -6,6 +9,9 @@ using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using ZURU.Roof.Addresses;
+using ZURU.Roof.OpcUaClients;
+using ZURU.Roof.Plcs;
 
 namespace ZURU.Roof;
 
@@ -26,6 +32,18 @@ public class RoofApplicationModule : AbpModule
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<RoofApplicationModule>();
+        });
+
+        var configuration = context.Services.GetConfiguration();
+        //context.Services.AddSingleton<IOpcUaClient>(o => {
+        //    var logger = o.GetRequiredService<ILogger<OpcUaClient>>();
+        //    return new OpcUaClient(configuration["OpcSimotion"], logger);
+        //});
+
+        context.Services.AddSingleton<IOpcUaClient>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<OpcUaClientMock>>();
+            return new OpcUaClientMock(logger);
         });
     }
 }

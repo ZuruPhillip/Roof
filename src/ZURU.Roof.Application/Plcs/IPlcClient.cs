@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
 using ZURU.Roof.Robots;
 
 namespace ZURU.Roof.Plcs
 {
-    public interface IPlcClient
+    public interface IPlcClient:ITransientDependency
     {
+        Task SendPlcTasksToPlc(List<PlcRobotAction> plcTasks);
         /*
         Task CheckAgvPermission();
         Task CheckIfTableIn();

@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opc.Ua.Client;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace ZURU.Roof.Utility.OpcUaClients
+namespace ZURU.Roof.OpcUaClients
 {
     public sealed class OpcUaClientMock : IOpcUaClient
     {

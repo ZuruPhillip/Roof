@@ -1,8 +1,17 @@
-﻿namespace ZURU.Roof.Plcs
+﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ZURU.Roof.Addresses;
+using ZURU.Roof.OpcUaClients;
+using ZURU.Roof.Robots;
+
+namespace ZURU.Roof.Plcs
 {
     public class PlcClient : IPlcClient
     {
-        /*
+
         private readonly IOpcUaClient _opcUaClient;
         private readonly ILogger<PlcClient> _logger;
         private readonly IAddress _address;
@@ -37,7 +46,6 @@
                     await _opcUaClient.WaitTaskIndexIncreaseToEnd(temp.Count, _address.TaskIndex);
                     await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
                 }
-
             }
             else
             {
@@ -47,7 +55,7 @@
                 await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
             }
         }
-
+        /*
         public async Task SendPlcTaskToPlc(PlcRobotAction plcTask)
         {
             var plcKeyValuePairs = PlcKeyValuePairGenerator.GetPlcKeyValuePairs(new List<PlcRobotAction> { plcTask }, _address.PreStr, _address.TaskSum);

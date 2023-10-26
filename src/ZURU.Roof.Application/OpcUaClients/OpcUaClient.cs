@@ -1,7 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Opc.Ua.Client;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Services;
 
-namespace ZURU.Roof.Utility.OpcUaClients
+namespace ZURU.Roof.OpcUaClients
 {
 
     public class OpcUaClient : IOpcUaClient

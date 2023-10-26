@@ -15,6 +15,7 @@ namespace ZURU.Roof.ModelBuilderExtension.Paths
                 entity.ConfigureByConvention(); //auto configure for the base class props
 
                 entity.Property(x => x.Id).HasComment("路径Id").IsRequired().HasMaxLength(128);
+                entity.Property(x => x.RoofId).HasComment("屋顶Id");
                 entity.Property(x => x.Index).HasComment("动作下标");
                 entity.Property(x => x.ActionId).HasComment("动作Id");
                 entity.Property(x => x.RobotId).HasComment("机械臂Id");
@@ -31,6 +32,7 @@ namespace ZURU.Roof.ModelBuilderExtension.Paths
                 entity.Property(x => x.KukaMotionType).HasComment("机器人动作类型： 1：PTP，2：LIN，3：CIRC");
                 entity.Property(x => x.Velocity).HasComment("速度");
                 entity.Property(x => x.OverWrite).HasComment("倍率");
+                entity.Property(x => x.CreateTime).HasComment("创建时间");
             });
         }
     }
