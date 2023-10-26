@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ZURU.Roof.Addresses;
 using ZURU.Roof.OpcUaClients;
+using ZURU.Roof.PlcDatas;
 using ZURU.Roof.Robots;
 
 namespace ZURU.Roof.Plcs
@@ -15,15 +16,17 @@ namespace ZURU.Roof.Plcs
         private readonly IOpcUaClient _opcUaClient;
         private readonly ILogger<PlcClient> _logger;
         private readonly IAddress _address;
+        private readonly IPlcDataRepository _plcDataRepository;
 
-        public PlcClient(IOpcUaClient opcUaClient, IAddress address, ILogger<PlcClient> logger)
+        public PlcClient(IOpcUaClient opcUaClient, IAddress address, ILogger<PlcClient> logger, IPlcDataRepository plcDataRepository)
         {
             _opcUaClient = opcUaClient ?? throw new ArgumentNullException(nameof(opcUaClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _address = address ?? throw new ArgumentNullException(nameof(address));
+            _plcDataRepository = plcDataRepository ?? throw new ArgumentNullException(nameof(plcDataRepository));
         }
 
-        public async Task SendPlcTasksToPlc(List<PlcRobotAction> plcTasks)
+        public async Task SendPlcTasksToPlc(List<PlcRobotAction> plcTasks,string roofId)
         {
             int count = plcTasks.Count;
             int numEachBulk = 100;
@@ -42,6 +45,7 @@ namespace ZURU.Roof.Plcs
                         temp = plcTasks.Skip(numEachBulk * m).Take(numEachBulk).ToList();
                     }
                     var plcKeyValuePairs = PlcKeyValuePairGenerator.GetPlcKeyValuePairs(temp, _address.PreStr, _address.TaskSum);
+                    await AddPlcDatasToDb(plcKeyValuePairs, roofId);
                     _opcUaClient.WriteKeyValuePairsToPlc(plcKeyValuePairs, _address.TaskSent);
                     await _opcUaClient.WaitTaskIndexIncreaseToEnd(temp.Count, _address.TaskIndex);
                     await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
@@ -50,10 +54,25 @@ namespace ZURU.Roof.Plcs
             else
             {
                 var plcKeyValuePairs = PlcKeyValuePairGenerator.GetPlcKeyValuePairs(plcTasks, _address.PreStr, _address.TaskSum);
+                await AddPlcDatasToDb(plcKeyValuePairs, roofId);
                 _opcUaClient.WriteKeyValuePairsToPlc(plcKeyValuePairs, _address.TaskSent);
                 await _opcUaClient.WaitTaskIndexIncreaseToEnd(plcTasks.Count, _address.TaskIndex);
                 await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
             }
+        }
+
+        private async Task AddPlcDatasToDb(List<KeyValuePair<string,object>> items, string roofId)
+        {
+            List<PlcData> plcDatas = new List<PlcData>();
+
+            foreach (var item in items)
+            {
+                var value = item.Value?.ToString() ?? string.Empty;
+                PlcData data = new PlcData(Guid.NewGuid(), roofId, item.Key, value) ;
+                plcDatas.Add(data);
+            }
+
+            await _plcDataRepository.InsertManyAsync(plcDatas);
         }
         /*
         public async Task SendPlcTaskToPlc(PlcRobotAction plcTask)

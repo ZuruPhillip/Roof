@@ -9,7 +9,7 @@ namespace ZURU.Roof.Plcs
 {
     public interface IPlcClient:ITransientDependency
     {
-        Task SendPlcTasksToPlc(List<PlcRobotAction> plcTasks);
+        Task SendPlcTasksToPlc(List<PlcRobotAction> plcTasks,string roofId);
         /*
         Task CheckAgvPermission();
         Task CheckIfTableIn();

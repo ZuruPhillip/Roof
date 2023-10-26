@@ -117,7 +117,7 @@ namespace ZURU.Roof.Roofs
                 await _robotPathRepository.InsertManyAsync(robotPathData);
 
                 //发送数据到PLC
-                await _plcClient.SendPlcTasksToPlc(robotPaths);
+                await _plcClient.SendPlcTasksToPlc(robotPaths,input.RoofId);
             }
             catch (Exception ex)
             {

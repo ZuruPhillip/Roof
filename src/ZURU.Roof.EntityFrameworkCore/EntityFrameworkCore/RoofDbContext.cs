@@ -1,5 +1,6 @@
 ﻿using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions.Infrastructure;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -18,6 +19,7 @@ using ZURU.Roof.ModelBuilderExtension.Books;
 using ZURU.Roof.ModelBuilderExtension.Paths;
 using ZURU.Roof.ModelBuilderExtension.Roofs;
 using ZURU.Roof.Paths;
+using ZURU.Roof.PlcDatas;
 using ZURU.Roof.Roofs;
 
 namespace ZURU.Roof.EntityFrameworkCore;
@@ -63,6 +65,7 @@ public class RoofDbContext :
     public DbSet<RoofRecord> RoofRecords { get; set; }
     public DbSet<RoofPoint> RoofPoints { get; set; }
     public DbSet<RobotPath> RobotPaths { get; set; }
+    public DbSet<PlcData> PlcDatas { get; set; }
     #endregion
 
     public RoofDbContext(DbContextOptions<RoofDbContext> options)
@@ -89,6 +92,7 @@ public class RoofDbContext :
         builder.ConfigureRoofRecord();
         builder.ConfigureRoofPoint();
         builder.ConfigureRobotPath();
+        builder.ConfigurePlcDatas();
 
         /* Configure your own tables/entities inside here */
 
