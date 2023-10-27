@@ -42,18 +42,23 @@ namespace ZURU.Roof.Paths
             RobotId = robotId;
             ActionType = actionType;
             NextActionType = nextActionType;
-            X = x;
-            Y = y;
-            Z = z;
-            A = a;
-            B = b;
-            C = c;
+            X = Round(x, 2);
+            Y = Round(y, 2);
+            Z = Round(z, 2);
+            A = Round(a, 2);
+            B = Round(b, 2);
+            C = Round(c, 2);
             S = s;
             T = t;
             KukaMotionType = kukaMotionType;
             Velocity = velocity;
             OverWrite = overWrite;
             CreateTime = DateTime.Now;
+        }
+
+        private float Round(float value, int bit)
+        {
+            return (float)Math.Round(value, bit);
         }
     }
 }

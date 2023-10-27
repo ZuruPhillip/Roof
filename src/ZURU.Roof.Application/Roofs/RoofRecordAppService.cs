@@ -72,8 +72,6 @@ namespace ZURU.Roof.Roofs
         {
             try
             {
-                int velocity = 10;
-                int overwrite = 20;
                 var robotPaths = new List<PlcRobotAction>();
                 //获取RoofRecord
                 var roofRecordEntity = await _roofRecordRepository.FindAsync(x => x.RoofId == input.RoofId);
@@ -94,30 +92,36 @@ namespace ZURU.Roof.Roofs
                 {
                     //不存在中间点
                     var pathTransforms = PathCalculation(leftPoints, rightPoints);
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms[0], velocity, overwrite));
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms[1], velocity, overwrite));
+                    foreach (var ts in pathTransforms)
+                    {
+                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                    }
                 }
                 else
                 {
                     //存在中间点
                     //生成路径A->B
                     var pathTransforms1 = PathCalculation(leftPoints, midPoints);
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms1[0], velocity, overwrite));
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms1[1], velocity, overwrite));
+                    foreach(var ts in pathTransforms1)
+                    {
+                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                    }
 
                     //生成路径B->A
-                    var pathTransforms2 = PathCalculation(midPoints,rightPoints);
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms2[0], velocity, overwrite));
-                    robotPaths.Add(RobotAction.GetRobotLinTask(5, pathTransforms2[1], velocity, overwrite));
+                    var pathTransforms2 = PathCalculation(midPoints, rightPoints);
+                    foreach (var ts in pathTransforms2)
+                    {
+                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                    }
                 }
 
-                //持久化关键数据到数据库,保存小数点后三位
-                var robotPathData = GenerateRobotPathData(robotPaths,input.RoofId);
-                robotPathData = robotPathData.OrderBy(p => p.Index).ToList();
-                await _robotPathRepository.InsertManyAsync(robotPathData);
+                var robotPathData = GenerateRobotPathData(robotPaths, input.RoofId);
 
+                await _robotPathRepository.InsertManyAsync(robotPathData);
+                //安全检查
+                SafetyCheck(robotPathData);
                 //发送数据到PLC
-                await _plcClient.SendPlcTasksToPlc(robotPaths,input.RoofId);
+                await _plcClient.SendPlcTasksToPlc(robotPaths, input.RoofId);
             }
             catch (Exception ex)
             {
@@ -125,16 +129,50 @@ namespace ZURU.Roof.Roofs
             }
         }
 
+        /// <summary>
+        /// 安全检查
+        /// </summary>
+        /// <param name="paths"></param>
+        private void SafetyCheck(List<RobotPath> paths)
+        {
+            foreach (var item in paths)
+            {
+                if (item.X < 800 && item.X > 1400)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的X值超出安全范围");
+                }
+                if (item.Y < 1150 && item.Y > 1200)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Y值超出安全范围");
+                }
+                if (item.Z < 1000 && item.Z > 1190)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Z值超出安全范围");
+                }
+                if (item.A < -2 && item.A > 2)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的A值超出安全范围");
+                }
+                if (item.B < -2 && item.B > 2)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的B值超出安全范围");
+                }
+                if (item.C < -93 && item.C > -87)
+                {
+                    throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的C值超出安全范围");
+                }
+            }
+        }
 
-        private List<RobotPath> GenerateRobotPathData(List<PlcRobotAction> actions,string roofId)
+        private List<RobotPath> GenerateRobotPathData(List<PlcRobotAction> actions, string roofId)
         {
             List<RobotPath> paths = new List<RobotPath>();
-            int index = 0;
+            int index = 1;
 
             foreach (var action in actions)
             {
                 var id = GuidGenerator.Create();
-                RobotPath path = new RobotPath(id, roofId,index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
+                RobotPath path = new RobotPath(id, roofId, index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
                     action.ActionInfo.RobotMotionInfo.EndPoint.X,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Y,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Z,
@@ -195,6 +233,7 @@ namespace ZURU.Roof.Roofs
         private List<Transform> PathCalculation(List<RoofPoint> leftPoints, List<RoofPoint> rightPoints)
         {
             List<Transform> pathTransform = new List<Transform>();
+            List<Transform> extPathTransform = new List<Transform>();
 
             var leftHeightDiff = HeightDiff(leftPoints);
             var rightHeightDiff = HeightDiff(rightPoints);
@@ -203,6 +242,7 @@ namespace ZURU.Roof.Roofs
             if (leftHeightDiff == rightHeightDiff)
             {
                 pathTransform = GenerateStraightPathTransform(leftPoints, rightPoints, leftHeightDiff);
+                extPathTransform = ExtensionTransfrom(pathTransform[0], pathTransform[1]);
             }
             else
             {
@@ -211,12 +251,14 @@ namespace ZURU.Roof.Roofs
                 {
                     //从左往右斜线运动
                     pathTransform = GenerateSlashPathTransform(leftPoints, rightPoints, PathDirectionEnum.LeftToRight);
+                    extPathTransform = ExtensionTransfrom(pathTransform[0], pathTransform[1]);
 
                 }
                 else if (rightHeightDiff == 0)
                 {
                     //从右往左斜线运动
                     pathTransform = GenerateSlashPathTransform(rightPoints, leftPoints, PathDirectionEnum.RightToleft);
+                    extPathTransform = ExtensionTransfrom(pathTransform[1], pathTransform[0]);
                 }
                 else
                 {
@@ -224,8 +266,47 @@ namespace ZURU.Roof.Roofs
                 }
             }
 
-            return pathTransform;
+            return extPathTransform;
         }
+
+        private List<Transform> ExtensionTransfrom(Transform leftPoint, Transform rightPoint)
+        {
+            List<Transform> result = new List<Transform>();
+
+            Transform leftTopExt = new Transform()
+            {
+                GlobalPosition = leftPoint.GlobalPosition + new Vector3(-RoofServiceConsts.PathOffset, -RoofServiceConsts.PathOffset, 0),
+                GlobalRotation = Quaternion.Identity
+            };
+
+            Transform leftExt = new Transform()
+            {
+                GlobalPosition = leftPoint.GlobalPosition + new Vector3(-RoofServiceConsts.PathOffset, 0, 0),
+                GlobalRotation = Quaternion.Identity
+            };
+
+            Transform rightExt = new Transform()
+            {
+                GlobalPosition = rightPoint.GlobalPosition + new Vector3(RoofServiceConsts.PathOffset, 0, 0),
+                GlobalRotation = Quaternion.Identity
+            };
+
+            Transform rightTopExt = new Transform()
+            {
+                GlobalPosition = rightPoint.GlobalPosition + new Vector3(RoofServiceConsts.PathOffset, -RoofServiceConsts.PathOffset, 0),
+                GlobalRotation = Quaternion.Identity
+            };
+
+            result.Add(leftTopExt);
+            result.Add(leftExt);
+            result.Add(leftPoint);
+            result.Add(rightPoint);
+            result.Add(rightExt);
+            result.Add(rightTopExt);
+
+            return result;
+        }
+
 
         private float HeightDiff(List<RoofPoint> points)
         {
@@ -253,7 +334,7 @@ namespace ZURU.Roof.Roofs
 
             var startPointsAveHeight = leftPoints.Select(p => p.Z).Average();
             var endPointsAveHeight = rightPoints.Select(p => p.Z).Average();
-            var startPoint = new Vector3(leftPoints[0].X, 0,startPointsAveHeight);
+            var startPoint = new Vector3(leftPoints[0].X, 0, startPointsAveHeight);
             Transform st = new Transform()
             {
                 Parent = originalTransform,
