@@ -140,11 +140,11 @@ namespace ZURU.Roof.Roofs
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的X值超出安全范围");
                 }
-                if (item.Y < 1140 || item.Y > 1200)
+                if (item.Y < 1000 || item.Y > 1200)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Y值超出安全范围");
                 }
-                if (item.Z < 1060 || item.Z > 1190)
+                if (item.Z < 1160 || item.Z > 1190)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Z值超出安全范围");
                 }
@@ -286,25 +286,25 @@ namespace ZURU.Roof.Roofs
             Transform leftTopExt = new Transform()
             {
                 GlobalPosition = leftPoint.GlobalPosition + new Vector3(-RoofServiceConsts.PathOffset, -RoofServiceConsts.PathOffset, 0),
-                GlobalRotation = Quaternion.Identity
+                GlobalRotation = leftPoint.GlobalRotation
             };
 
             Transform leftExt = new Transform()
             {
                 GlobalPosition = leftPoint.GlobalPosition + new Vector3(-RoofServiceConsts.PathOffset, 0, 0),
-                GlobalRotation = Quaternion.Identity
+                GlobalRotation = leftPoint.GlobalRotation
             };
 
             Transform rightExt = new Transform()
             {
                 GlobalPosition = rightPoint.GlobalPosition + new Vector3(RoofServiceConsts.PathOffset, 0, 0),
-                GlobalRotation = Quaternion.Identity
+                GlobalRotation = rightPoint.GlobalRotation
             };
 
             Transform rightTopExt = new Transform()
             {
                 GlobalPosition = rightPoint.GlobalPosition + new Vector3(RoofServiceConsts.PathOffset, -RoofServiceConsts.PathOffset, 0),
-                GlobalRotation = Quaternion.Identity
+                GlobalRotation = rightPoint.GlobalRotation
             };
 
             result.Add(leftTopExt);
@@ -469,7 +469,5 @@ namespace ZURU.Roof.Roofs
 
             return slashDirection;
         }
-
-        //安全检查
     }
 }
