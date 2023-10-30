@@ -4,7 +4,7 @@ using ZURU.Roof.Roofs;
 
 namespace ZURU.Roof.PlcDatas
 {
-    public interface IPlcDataRepository : IRepository<PlcData, Guid>
+    public interface IPlcDataRepository : IRepository<PlcData, long>
     {
     }
 }

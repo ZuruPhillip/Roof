@@ -15,7 +15,7 @@ namespace ZURU.Roof.ModelBuilderExtension.Roofs
                     RoofServiceConsts.DbSchema, tb => tb.HasComment("屋顶顶点记录表"));
                 entity.ConfigureByConvention(); //auto configure for the base class props
 
-                entity.Property(x => x.Id).HasComment("屋顶编号").IsRequired().HasMaxLength(128);
+                entity.Property(x => x.Id).HasComment("屋顶编号").IsRequired().ValueGeneratedOnAdd();
                 entity.Property(x => x.PointIndex).HasComment("点下标值");
                 entity.Property(x => x.X).HasComment("X 坐标值");
                 entity.Property(x => x.Y).HasComment("Y 坐标值");

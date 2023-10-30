@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace ZURU.Roof.Roofs
 {
-    public class RoofPoint : Entity<Guid>
+    public class RoofPoint : Entity<long>
     {
         
         public virtual Guid RecordId { get; private set; }
@@ -17,7 +17,7 @@ namespace ZURU.Roof.Roofs
 
         public virtual RoofRecord RoofRecord { get; set; }
 
-        public RoofPoint(Guid id,int pointIndex, PointTypeEnum pointType, float x, float y, float z) : base(id)
+        public RoofPoint(int pointIndex, PointTypeEnum pointType, float x, float y, float z)
         {
             PointIndex = pointIndex;
             PointType = pointType;

@@ -6,7 +6,7 @@ using ZURU.Roof.Paths;
 
 namespace ZURU.Roof.Implements.RobotPaths
 {
-    public class RobotPathRepository : EfCoreRepository<RoofDbContext, RobotPath, Guid>, IRobotPathRepository
+    public class RobotPathRepository : EfCoreRepository<RoofDbContext, RobotPath, long>, IRobotPathRepository
     {
         public RobotPathRepository(IDbContextProvider<RoofDbContext> dbContextProvider) : base(dbContextProvider)
         {

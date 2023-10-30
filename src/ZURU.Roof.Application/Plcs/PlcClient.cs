@@ -68,7 +68,7 @@ namespace ZURU.Roof.Plcs
             foreach (var item in items)
             {
                 var value = item.Value?.ToString() ?? string.Empty;
-                PlcData data = new PlcData(Guid.NewGuid(), roofId, item.Key, value) ;
+                PlcData data = new PlcData(roofId, item.Key, value) ;
                 plcDatas.Add(data);
             }
 

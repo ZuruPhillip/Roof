@@ -14,7 +14,7 @@ namespace ZURU.Roof.ModelBuilderExtension.Paths
                     RoofServiceConsts.DbSchema, tb => tb.HasComment("机械臂路径记录表"));
                 entity.ConfigureByConvention(); //auto configure for the base class props
 
-                entity.Property(x => x.Id).HasComment("路径Id").IsRequired().HasMaxLength(128);
+                entity.Property(x => x.Id).HasComment("路径Id").IsRequired().ValueGeneratedOnAdd();
                 entity.Property(x => x.RoofId).HasComment("屋顶Id");
                 entity.Property(x => x.Index).HasComment("动作下标");
                 entity.Property(x => x.ActionId).HasComment("动作Id");

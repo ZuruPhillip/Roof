@@ -3,7 +3,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace ZURU.Roof.PlcDatas
 {
-    public class PlcData : Entity<Guid>
+    public class PlcData : Entity<long>
     {
         public string RoofId { get; private set; }
         public string NodeId { get; private set; }
@@ -13,7 +13,7 @@ namespace ZURU.Roof.PlcDatas
 
         protected PlcData() { }
 
-        public PlcData(Guid id, string roofId, string nodeId, string value) : base(id)
+        public PlcData(string roofId, string nodeId, string value)
         {
             RoofId = roofId;
             NodeId = nodeId;

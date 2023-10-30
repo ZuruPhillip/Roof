@@ -8,7 +8,7 @@ using ZURU.Roof.Roofs;
 
 namespace ZURU.Roof.Paths
 {
-    public interface IRobotPathRepository : IRepository<RobotPath, Guid>
+    public interface IRobotPathRepository : IRepository<RobotPath, long>
     {
     }
 }

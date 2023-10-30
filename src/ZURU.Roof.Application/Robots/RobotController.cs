@@ -240,12 +240,12 @@ namespace ZURU.Roof.Robots
             Vector3 aBC = QuatToABC(transform.GlobalRotation);
             return new E6POS()
             {
-                X = transform.GlobalPosition.X,
-                Y = transform.GlobalPosition.Y,
-                Z = transform.GlobalPosition.Z,
-                A = aBC.X,
-                B = aBC.Y,
-                C = aBC.Z,
+                X = MathExtensions.FloatRound(transform.GlobalPosition.X,2),
+                Y = MathExtensions.FloatRound(transform.GlobalPosition.Y,2),
+                Z = MathExtensions.FloatRound(transform.GlobalPosition.Z,2),
+                A = MathExtensions.FloatRound(aBC.X,2),
+                B = MathExtensions.FloatRound(aBC.Y,2),
+                C = MathExtensions.FloatRound(aBC.Z,2),
                 S = transform.SValue,
                 T = transform.TValue
             };

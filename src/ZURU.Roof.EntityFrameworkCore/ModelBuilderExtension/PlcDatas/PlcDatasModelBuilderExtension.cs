@@ -20,7 +20,7 @@ namespace ZURU.Roof.ModelBuilderExtension.Books
                 entity.ToTable(RoofServiceConsts.DbTablePrefix + "PlcDatas",
                     RoofServiceConsts.DbSchema);
                 entity.ConfigureByConvention(); //auto configure for the base class props
-                entity.Property(x => x.Id).IsRequired().HasMaxLength(128).HasComment("Id");
+                entity.Property(x => x.Id).IsRequired().HasComment("Id").ValueGeneratedOnAdd();
                 entity.Property(x => x.RoofId).HasComment("屋顶Id");
                 entity.Property(x => x.NodeId).HasComment("NodeId");
                 entity.Property(x => x.Value).HasComment("NodeId 值");

@@ -91,5 +91,10 @@ namespace ZURU.Roof.Utility.Maths
             if (Math.Abs(x) < doubleTolerance) return 0;
             return x < 0 ? -1 : 1;
         }
+
+        public static float FloatRound(float value, int bit)
+        {
+            return (float)Math.Round(value, bit);
+        }
     }
 }

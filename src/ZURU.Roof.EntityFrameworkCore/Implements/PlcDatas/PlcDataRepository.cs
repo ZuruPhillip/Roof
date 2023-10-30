@@ -11,7 +11,7 @@ using ZURU.Roof.Roofs;
 
 namespace ZURU.Roof.Implements.Roofs
 {
-    public class PlcDataRepository : EfCoreRepository<RoofDbContext, PlcData, Guid>, IPlcDataRepository
+    public class PlcDataRepository : EfCoreRepository<RoofDbContext, PlcData, long>, IPlcDataRepository
     {
         public PlcDataRepository(IDbContextProvider<RoofDbContext> dbContextProvider) : base(dbContextProvider)
         {

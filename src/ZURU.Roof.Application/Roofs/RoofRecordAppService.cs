@@ -45,15 +45,15 @@ namespace ZURU.Roof.Roofs
                 int pointIndex = 1;
                 foreach (var cp in input.ContourPoints)
                 {
-                    var id = GuidGenerator.Create();
-                    RoofPoint rp = new RoofPoint(id, pointIndex, PointTypeEnum.ContourPoint, cp.X, cp.Y, cp.Z);
+
+                    RoofPoint rp = new RoofPoint(pointIndex, PointTypeEnum.ContourPoint, cp.X, cp.Y, cp.Z);
                     pointIndex++;
                     roofPoints.Add(rp);
                 }
                 foreach (var mp in input.MidPoints)
                 {
                     var id = GuidGenerator.Create();
-                    RoofPoint cp = new RoofPoint(id, pointIndex, PointTypeEnum.MidPoint, mp.X, mp.Y, mp.Z);
+                    RoofPoint cp = new RoofPoint(pointIndex, PointTypeEnum.MidPoint, mp.X, mp.Y, mp.Z);
                     pointIndex++;
                     roofPoints.Add(cp);
                 }
@@ -102,7 +102,7 @@ namespace ZURU.Roof.Roofs
                     //存在中间点
                     //生成路径A->B
                     var pathTransforms1 = PathCalculation(leftPoints, midPoints);
-                    foreach(var ts in pathTransforms1)
+                    foreach (var ts in pathTransforms1)
                     {
                         robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
                     }
@@ -116,7 +116,6 @@ namespace ZURU.Roof.Roofs
                 }
 
                 var robotPathData = GenerateRobotPathData(robotPaths, input.RoofId);
-
                 await _robotPathRepository.InsertManyAsync(robotPathData);
                 //安全检查
                 SafetyCheck(robotPathData);
@@ -137,27 +136,27 @@ namespace ZURU.Roof.Roofs
         {
             foreach (var item in paths)
             {
-                if (item.X < 800 && item.X > 1400)
+                if (item.X < -600 || item.X > 900)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的X值超出安全范围");
                 }
-                if (item.Y < 1150 && item.Y > 1200)
+                if (item.Y < 1140 || item.Y > 1200)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Y值超出安全范围");
                 }
-                if (item.Z < 1000 && item.Z > 1190)
+                if (item.Z < 1060 || item.Z > 1190)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的Z值超出安全范围");
                 }
-                if (item.A < -2 && item.A > 2)
+                if (item.A < -2 || item.A > 2)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的A值超出安全范围");
                 }
-                if (item.B < -2 && item.B > 2)
+                if (item.B < -2 || item.B > 2)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的B值超出安全范围");
                 }
-                if (item.C < -93 && item.C > -87)
+                if (item.C < -92 || item.C > -88)
                 {
                     throw new Exception($"屋顶{item.RoofId}的第{item.Index}个点的C值超出安全范围");
                 }
@@ -168,11 +167,9 @@ namespace ZURU.Roof.Roofs
         {
             List<RobotPath> paths = new List<RobotPath>();
             int index = 1;
-
             foreach (var action in actions)
             {
-                var id = GuidGenerator.Create();
-                RobotPath path = new RobotPath(id, roofId, index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
+                RobotPath path = new RobotPath(roofId, index, action.ActionId, action.RobotId, action.ActionType, action.NextActionType,
                     action.ActionInfo.RobotMotionInfo.EndPoint.X,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Y,
                     action.ActionInfo.RobotMotionInfo.EndPoint.Z,
@@ -241,7 +238,20 @@ namespace ZURU.Roof.Roofs
             //如果左右侧高度差相等，走直线运动
             if (leftHeightDiff == rightHeightDiff)
             {
-                pathTransform = GenerateStraightPathTransform(leftPoints, rightPoints, leftHeightDiff);
+                //判断直线运动方向 
+                if (leftPoints[0].X == leftPoints[1].X)
+                {
+                    pathTransform = GenerateStraightPathTransform(leftPoints, rightPoints, leftHeightDiff, PathDirectionEnum.LeftToRight);
+                }
+                else if (rightPoints[0].X == rightPoints[1].X)
+                {
+                    pathTransform = GenerateStraightPathTransform(rightPoints, leftPoints, leftHeightDiff, PathDirectionEnum.RightToleft);
+                }
+                else
+                {
+                    //不考虑这种情况
+                }
+
                 extPathTransform = ExtensionTransfrom(pathTransform[0], pathTransform[1]);
             }
             else
@@ -265,7 +275,7 @@ namespace ZURU.Roof.Roofs
                     //暂时不考虑这种情况
                 }
             }
-
+            //return pathTransform;
             return extPathTransform;
         }
 
@@ -325,32 +335,63 @@ namespace ZURU.Roof.Roofs
         /// <param name="rightPoints"></param>
         /// <param name="heightDiff"></param>
         /// <returns></returns>
-        private List<Transform> GenerateStraightPathTransform(List<RoofPoint> leftPoints, List<RoofPoint> rightPoints, float heightDiff)
+        private List<Transform> GenerateStraightPathTransform(List<RoofPoint> startPoints, List<RoofPoint> endPoints, float heightDiff, PathDirectionEnum direction)
         {
             List<Transform> pathTransforms = new List<Transform>();
 
             var originalTransform = GetOriginalTransform();
             var angle = GetAngleByHeightDiff(heightDiff);
 
-            var startPointsAveHeight = leftPoints.Select(p => p.Z).Average();
-            var endPointsAveHeight = rightPoints.Select(p => p.Z).Average();
-            var startPoint = new Vector3(leftPoints[0].X, 0, startPointsAveHeight);
-            Transform st = new Transform()
-            {
-                Parent = originalTransform,
-                LocalPosition = startPoint,
-                LocalRotation = RobotController.ABCToQuat(0, 0, angle)
-            };
-            pathTransforms.Add(st);
+            var startPointsAveHeight = startPoints.Select(p => p.Z).Average();
+            var endPointsAveHeight = endPoints.Select(p => p.Z).Average();
 
-            var endPoint = new Vector3(rightPoints[0].X, 0, endPointsAveHeight);
-            Transform et = new Transform()
+            if (direction == PathDirectionEnum.LeftToRight)
             {
-                Parent = originalTransform,
-                LocalPosition = endPoint,
-                LocalRotation = RobotController.ABCToQuat(0, 0, angle)
-            };
-            pathTransforms.Add(et);
+                var minx = startPoints.Select(p => p.X).Min();
+                var maxX = endPoints.Select(p => p.X).Max();
+
+                var startPoint = new Vector3(minx, 0, startPointsAveHeight);
+                Transform st = new Transform()
+                {
+                    Parent = originalTransform,
+                    LocalPosition = startPoint,
+                    LocalRotation = RobotController.ABCToQuat(0, 0, angle)
+                };
+                pathTransforms.Add(st);
+
+                var endPoint = new Vector3(maxX, 0, endPointsAveHeight);
+                Transform et = new Transform()
+                {
+                    Parent = originalTransform,
+                    LocalPosition = endPoint,
+                    LocalRotation = RobotController.ABCToQuat(0, 0, angle)
+                };
+                pathTransforms.Add(et);
+            }
+
+            if (direction == PathDirectionEnum.RightToleft)
+            {
+                var minx = endPoints.Select(p => p.X).Min();
+                var maxX = startPoints.Select(p => p.X).Max();
+
+                var startPoint = new Vector3(maxX, 0, startPointsAveHeight);
+                Transform st = new Transform()
+                {
+                    Parent = originalTransform,
+                    LocalPosition = startPoint,
+                    LocalRotation = RobotController.ABCToQuat(0, 0, angle)
+                };
+                pathTransforms.Add(st);
+
+                var endPoint = new Vector3(minx, 0, endPointsAveHeight);
+                Transform et = new Transform()
+                {
+                    Parent = originalTransform,
+                    LocalPosition = endPoint,
+                    LocalRotation = RobotController.ABCToQuat(0, 0, angle)
+                };
+                pathTransforms.Add(et);
+            }
 
             return pathTransforms;
         }
@@ -399,11 +440,11 @@ namespace ZURU.Roof.Roofs
             }
 
             //终点坐标
-            var endPoint = new Vector3(endPoints[0].X, 0, endPoints[0].Z);
+            //var endPoint = new Vector3(endPoints[0].X, 0, endPoints[0].Z);
             Transform et = new Transform()
             {
                 Parent = originalTransform,
-                LocalPosition = endPoint + offSet,
+                LocalPosition = startPoint + offSet,
                 LocalRotation = RobotController.ABCToQuat(0, 0, 0)
             };
             pathTransforms.Add(et);

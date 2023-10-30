@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 using ZURU.Roof.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using ZURU.Roof.EntityFrameworkCore;
 namespace ZURU.Roof.Migrations
 {
     [DbContext(typeof(RoofDbContext))]
-    partial class RoofDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231027080835_update_id1")]
+    partial class update_id1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1888,9 +1891,9 @@ namespace ZURU.Roof.Migrations
 
             modelBuilder.Entity("ZURU.Roof.PlcDatas.PlcData", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("char(128)")
                         .HasComment("Id");
 
                     b.Property<DateTime>("CreateTime")
