@@ -9,6 +9,7 @@ using OpenIddict.Validation.AspNetCore;
 using System.IO;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -85,6 +86,7 @@ public class RoofWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+        ConfigureAbpExceptionFilter();
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -163,6 +165,15 @@ public class RoofWebModule : AbpModule
                 options.CustomSchemaIds(type => type.FullName);
             }
         );
+    }
+
+    //Abp项目默认会启动内置的异常处理，默认不将异常信息发送到客户端。
+    private void ConfigureAbpExceptionFilter()
+    {
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = true;
+        });
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)

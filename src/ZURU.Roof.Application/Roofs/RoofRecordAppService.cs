@@ -124,7 +124,7 @@ namespace ZURU.Roof.Roofs
             }
             catch (Exception ex)
             {
-                throw new Exception("发送数据异常");
+                throw new Exception("发送数据异常,异常信息"+ex.Message);
             }
         }
 
