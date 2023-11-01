@@ -1,16 +1,20 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;
+using Polly;
+using System.Collections.Generic;
 using System.IO;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
@@ -30,6 +34,7 @@ using Volo.Abp.VirtualFileSystem;
 using ZURU.Roof.EntityFrameworkCore;
 using ZURU.Roof.Localization;
 using ZURU.Roof.MultiTenancy;
+using ZURU.Roof.Web.Filter;
 using ZURU.Roof.Web.Menus;
 
 namespace ZURU.Roof.Web;
@@ -86,8 +91,9 @@ public class RoofWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
-        ConfigureAbpExceptionFilter();
+        ConfigureAbpExceptionFilter(context);
     }
+
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
@@ -168,11 +174,16 @@ public class RoofWebModule : AbpModule
     }
 
     //Abp项目默认会启动内置的异常处理，默认不将异常信息发送到客户端。
-    private void ConfigureAbpExceptionFilter()
+    private void ConfigureAbpExceptionFilter(ServiceConfigurationContext context)
     {
         Configure<AbpExceptionHandlingOptions>(options =>
         {
             options.SendExceptionsDetailsToClients = true;
+        });
+
+        context.Services.AddMvc(options =>
+        {
+            options.Filters.ReplaceOne(x => (x as ServiceFilterAttribute)?.ServiceType?.Name == nameof(AbpExceptionFilter), new ServiceFilterAttribute(typeof(CustomAbpExceptionFilter)));
         });
     }
 
