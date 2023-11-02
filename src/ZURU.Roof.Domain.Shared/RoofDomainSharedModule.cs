@@ -23,7 +23,9 @@ namespace ZURU.Roof;
     typeof(AbpOpenIddictDomainSharedModule),
     typeof(AbpPermissionManagementDomainSharedModule),
     typeof(AbpSettingManagementDomainSharedModule),
-    typeof(AbpTenantManagementDomainSharedModule)    
+    typeof(AbpTenantManagementDomainSharedModule),
+    typeof(AbpLocalizationModule),
+    typeof(AbpVirtualFileSystemModule)
     )]
 public class RoofDomainSharedModule : AbpModule
 {
@@ -43,7 +45,7 @@ public class RoofDomainSharedModule : AbpModule
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Resources
-                .Add<RoofResource>("en")
+                .Add<RoofResource>("zh-Hans")
                 .AddBaseTypes(typeof(AbpValidationResource))
                 .AddVirtualJson("/Localization/Roof");
 

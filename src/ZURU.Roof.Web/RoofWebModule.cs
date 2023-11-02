@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;
-using Polly;
 using System.Collections.Generic;
 using System.IO;
 using Volo.Abp;
@@ -24,6 +23,7 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Identity.Web;
+using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
@@ -50,7 +50,9 @@ namespace ZURU.Roof.Web;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpLocalizationModule),
+    typeof(RoofDomainSharedModule)
     )]
 public class RoofWebModule : AbpModule
 {
@@ -92,8 +94,18 @@ public class RoofWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureAbpExceptionFilter(context);
+        ConfigureLocalization();
     }
 
+    private void ConfigureLocalization()
+    {
+        Configure<AbpLocalizationOptions>(options =>
+        {
+            options.Languages.Add(new LanguageInfo("en", "en", "English", "gb"));
+            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "¼òÌåÖÐÎÄ"));
+            options.DefaultResourceType = typeof(RoofResource);
+        });
+    }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
@@ -179,6 +191,7 @@ public class RoofWebModule : AbpModule
         Configure<AbpExceptionHandlingOptions>(options =>
         {
             options.SendExceptionsDetailsToClients = true;
+            options.SendStackTraceToClients = false;
         });
 
         context.Services.AddMvc(options =>
@@ -225,5 +238,6 @@ public class RoofWebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+        app.UseAbpRequestLocalization();
     }
 }
