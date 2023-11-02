@@ -56,8 +56,8 @@ namespace ZURU.Roof.Plcs
                 var plcKeyValuePairs = PlcKeyValuePairGenerator.GetPlcKeyValuePairs(plcTasks, _address.PreStr, _address.TaskSum);
                 await AddPlcDatasToDb(plcKeyValuePairs, roofId);
                 _opcUaClient.WriteKeyValuePairsToPlc(plcKeyValuePairs, _address.TaskSent);
-                await _opcUaClient.WaitTaskIndexIncreaseToEnd(plcTasks.Count, _address.TaskIndex);
-                await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
+                //await _opcUaClient.WaitTaskIndexIncreaseToEnd(plcTasks.Count, _address.TaskIndex);
+                //await _opcUaClient.WaitNodeValueToBeTrueAsync(_address.TaskDone);
             }
         }
 

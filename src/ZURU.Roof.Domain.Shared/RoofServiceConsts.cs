@@ -12,9 +12,9 @@ namespace ZURU.Roof
 
         public const string AppName = "Roof";
         public const float PathOffset = 100.0f;
-        public const int RobotId = 5;
-        public const int RobotVelocity = 10;
-        public const int RobotOverwrite = 20;
+        public const int RobotId = 4;
+        public const int RobotVelocity = 5;
+        public const int RobotOverwrite = 10;
 
         /// <summary>
         /// 是否启用多租户
