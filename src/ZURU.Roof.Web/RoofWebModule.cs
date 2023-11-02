@@ -1,15 +1,19 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Validation.AspNetCore;
+using System.Collections.Generic;
 using System.IO;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.AspNetCore.Mvc.ExceptionHandling;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
@@ -19,6 +23,7 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Identity.Web;
+using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.Swashbuckle;
@@ -29,6 +34,7 @@ using Volo.Abp.VirtualFileSystem;
 using ZURU.Roof.EntityFrameworkCore;
 using ZURU.Roof.Localization;
 using ZURU.Roof.MultiTenancy;
+using ZURU.Roof.Web.Filter;
 using ZURU.Roof.Web.Menus;
 
 namespace ZURU.Roof.Web;
@@ -44,7 +50,9 @@ namespace ZURU.Roof.Web;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpTenantManagementWebModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpLocalizationModule),
+    typeof(RoofDomainSharedModule)
     )]
 public class RoofWebModule : AbpModule
 {
@@ -85,6 +93,18 @@ public class RoofWebModule : AbpModule
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
+        ConfigureAbpExceptionFilter(context);
+        ConfigureLocalization();
+    }
+
+    private void ConfigureLocalization()
+    {
+        Configure<AbpLocalizationOptions>(options =>
+        {
+            //options.Languages.Add(new LanguageInfo("en", "en", "English", "gb"));
+            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
+            options.DefaultResourceType = typeof(RoofResource);
+        });
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -165,6 +185,21 @@ public class RoofWebModule : AbpModule
         );
     }
 
+    //Abp项目默认会启动内置的异常处理，默认不将异常信息发送到客户端。
+    private void ConfigureAbpExceptionFilter(ServiceConfigurationContext context)
+    {
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = true;
+            options.SendStackTraceToClients = false;
+        });
+
+        context.Services.AddMvc(options =>
+        {
+            options.Filters.ReplaceOne(x => (x as ServiceFilterAttribute)?.ServiceType?.Name == nameof(AbpExceptionFilter), new ServiceFilterAttribute(typeof(CustomAbpExceptionFilter)));
+        });
+    }
+
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
@@ -203,5 +238,6 @@ public class RoofWebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+        app.UseAbpRequestLocalization();
     }
 }

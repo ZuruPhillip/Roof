@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using ZURU.Roof.Localization;
 using ZURU.Roof.Paths;
 using ZURU.Roof.Plcs;
 using ZURU.Roof.Robots;
@@ -16,12 +18,14 @@ namespace ZURU.Roof.Roofs
         private readonly IRoofRecordRepository _roofRecordRepository;
         private readonly IRobotPathRepository _robotPathRepository;
         private readonly IPlcClient _plcClient;
+        private readonly IStringLocalizer<RoofResource> _localizer;
 
-        public RoofRecordAppService(IRoofRecordRepository roofRecordRepository, IRobotPathRepository robotPathRepository, IPlcClient plcClient)
+        public RoofRecordAppService(IRoofRecordRepository roofRecordRepository, IRobotPathRepository robotPathRepository, IPlcClient plcClient, IStringLocalizer<RoofResource> localizer)
         {
             _roofRecordRepository = roofRecordRepository;
             _robotPathRepository = robotPathRepository;
             _plcClient = plcClient;
+            _localizer = localizer;
         }
 
         /// <summary>
@@ -32,100 +36,88 @@ namespace ZURU.Roof.Roofs
         [HttpPost, Route(RouteAddress.AddRoofRecordAsync)]
         public async Task AddRoofRecordAsync(RoofInputDto input)
         {
-            try
+            //幂等判断
+            var roofRecordExist = await _roofRecordRepository.FindAsync(x => x.RoofId == input.RoofId);
+            if (roofRecordExist != null)
             {
-                //幂等判断
-                var roofRecordExist = await _roofRecordRepository.FindAsync(x => x.RoofId == input.RoofId);
-                if (roofRecordExist != null)
-                {
-                    throw new Exception($"Id 为{input.Id}的屋顶数据已存在");
-                }
-
-                List<RoofPoint> roofPoints = new List<RoofPoint>();
-                int pointIndex = 1;
-                foreach (var cp in input.ContourPoints)
-                {
-
-                    RoofPoint rp = new RoofPoint(pointIndex, PointTypeEnum.ContourPoint, cp.X, cp.Y, cp.Z);
-                    pointIndex++;
-                    roofPoints.Add(rp);
-                }
-                foreach (var mp in input.MidPoints)
-                {
-                    var id = GuidGenerator.Create();
-                    RoofPoint cp = new RoofPoint(pointIndex, PointTypeEnum.MidPoint, mp.X, mp.Y, mp.Z);
-                    pointIndex++;
-                    roofPoints.Add(cp);
-                }
-                RoofRecord record = new RoofRecord(input.RoofId, roofPoints, true);
-
-                await _roofRecordRepository.InsertAsync(record);
+                var msg = _localizer["RoofDataAlreadyExisted",input.RoofId];
+                throw new Exception(msg);
             }
-            catch (Exception ex)
+
+            List<RoofPoint> roofPoints = new List<RoofPoint>();
+            int pointIndex = 1;
+            foreach (var cp in input.ContourPoints)
             {
-                throw new Exception("保存异常");
+
+                RoofPoint rp = new RoofPoint(pointIndex, PointTypeEnum.ContourPoint, cp.X, cp.Y, cp.Z);
+                pointIndex++;
+                roofPoints.Add(rp);
             }
+            foreach (var mp in input.MidPoints)
+            {
+                var id = GuidGenerator.Create();
+                RoofPoint cp = new RoofPoint(pointIndex, PointTypeEnum.MidPoint, mp.X, mp.Y, mp.Z);
+                pointIndex++;
+                roofPoints.Add(cp);
+            }
+            RoofRecord record = new RoofRecord(input.RoofId, roofPoints, true);
+
+            await _roofRecordRepository.InsertAsync(record);
         }
 
         [HttpPost, Route(RouteAddress.GetRoofRecordAndSendAsync)]
         public async Task GetRoofRecordDataAndSendAsync(GenerateRoofDataInput input)
         {
-            try
+            var robotPaths = new List<PlcRobotAction>();
+            //获取RoofRecord
+            var roofRecordEntity = await _roofRecordRepository.FindAsync(x => x.RoofId == input.RoofId);
+            if (roofRecordEntity == null)
             {
-                var robotPaths = new List<PlcRobotAction>();
-                //获取RoofRecord
-                var roofRecordEntity = await _roofRecordRepository.FindAsync(x => x.RoofId == input.RoofId);
-                if (roofRecordEntity == null)
-                {
-                    throw new Exception($"编号为{input.RoofId} 的屋顶不存在");
-                }
-
-                //路径生成
-                float minX = roofRecordEntity.RoofPoints.Select(p => p.X).Min();
-                float maxX = roofRecordEntity.RoofPoints.Select(p => p.X).Max();
-                var leftPoints = roofRecordEntity.RoofPoints.Where(p => p.X == minX && p.PointType == PointTypeEnum.ContourPoint).ToList();
-                var rightPoints = roofRecordEntity.RoofPoints.Where(p => p.X == maxX && p.PointType == PointTypeEnum.ContourPoint).ToList();
-                var midPoints = roofRecordEntity.RoofPoints.Where(p => p.PointType == PointTypeEnum.MidPoint).ToList();
-
-                //判断是否存在中间点
-                if (midPoints.Count == 0)
-                {
-                    //不存在中间点
-                    var pathTransforms = PathCalculation(leftPoints, rightPoints);
-                    foreach (var ts in pathTransforms)
-                    {
-                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
-                    }
-                }
-                else
-                {
-                    //存在中间点
-                    //生成路径A->B
-                    var pathTransforms1 = PathCalculation(leftPoints, midPoints);
-                    foreach (var ts in pathTransforms1)
-                    {
-                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
-                    }
-
-                    //生成路径B->A
-                    var pathTransforms2 = PathCalculation(midPoints, rightPoints);
-                    foreach (var ts in pathTransforms2)
-                    {
-                        robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
-                    }
-                }
-
-                var robotPathData = GenerateRobotPathData(robotPaths, input.RoofId);
-                await _robotPathRepository.InsertManyAsync(robotPathData);
-                //安全检查
-                SafetyCheck(robotPathData);
-                //发送数据到PLC
-                await _plcClient.SendPlcTasksToPlc(robotPaths, input.RoofId);
+                var msg = _localizer["RoofDataNotExisted", input.RoofId];
+                throw new Exception(msg);
             }
-            catch (Exception ex)
+
+            //路径生成
+            float minX = roofRecordEntity.RoofPoints.Select(p => p.X).Min();
+            float maxX = roofRecordEntity.RoofPoints.Select(p => p.X).Max();
+            var leftPoints = roofRecordEntity.RoofPoints.Where(p => p.X == minX && p.PointType == PointTypeEnum.ContourPoint).ToList();
+            var rightPoints = roofRecordEntity.RoofPoints.Where(p => p.X == maxX && p.PointType == PointTypeEnum.ContourPoint).ToList();
+            var midPoints = roofRecordEntity.RoofPoints.Where(p => p.PointType == PointTypeEnum.MidPoint).ToList();
+
+            //判断是否存在中间点
+            if (midPoints.Count == 0)
             {
-                throw new Exception("发送数据异常");
+                //不存在中间点
+                var pathTransforms = PathCalculation(leftPoints, rightPoints);
+                foreach (var ts in pathTransforms)
+                {
+                    robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                }
             }
+            else
+            {
+                //存在中间点
+                //生成路径A->B
+                var pathTransforms1 = PathCalculation(leftPoints, midPoints);
+                foreach (var ts in pathTransforms1)
+                {
+                    robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                }
+
+                //生成路径B->A
+                var pathTransforms2 = PathCalculation(midPoints, rightPoints);
+                foreach (var ts in pathTransforms2)
+                {
+                    robotPaths.Add(RobotAction.GetRobotLinTask(RoofServiceConsts.RobotId, ts, RoofServiceConsts.RobotVelocity, RoofServiceConsts.RobotOverwrite));
+                }
+            }
+
+            var robotPathData = GenerateRobotPathData(robotPaths, input.RoofId);
+            await _robotPathRepository.InsertManyAsync(robotPathData);
+            //安全检查
+            SafetyCheck(robotPathData);
+            //发送数据到PLC
+            await _plcClient.SendPlcTasksToPlc(robotPaths, input.RoofId);
         }
 
         /// <summary>
