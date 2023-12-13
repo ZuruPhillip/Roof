@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ZURU.Roof.Books
 {
-    public class CreateUpdateBookDto
+    public class CreateUpdateBookDto : IValidatableObject
     {
         [Required]
         [StringLength(128)]
@@ -18,7 +18,13 @@ namespace ZURU.Roof.Books
         [DataType(DataType.Date)]
         public DateTime PublishDate { get; set; } = DateTime.Now;
 
-        [Required]
+        [Range(0, 999.99)]
         public float Price { get; set; }
+
+        //自定义验证逻辑
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
