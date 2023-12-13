@@ -33,17 +33,17 @@ public class RoofApplicationModule : AbpModule
         });
 
         var configuration = context.Services.GetConfiguration();
-        context.Services.AddSingleton<IOpcUaClient>(o =>
-        {
-            var logger = o.GetRequiredService<ILogger<OpcUaClient>>();
-            return new OpcUaClient(configuration["OpcSimotion"], logger);
-        });
-
-        //context.Services.AddSingleton<IOpcUaClient>(sp =>
+        //context.Services.AddSingleton<IOpcUaClient>(o =>
         //{
-        //    var logger = sp.GetRequiredService<ILogger<OpcUaClientMock>>();
-        //    return new OpcUaClientMock(logger);
+        //    var logger = o.GetRequiredService<ILogger<OpcUaClient>>();
+        //    return new OpcUaClient(configuration["OpcSimotion"], logger);
         //});
+
+        context.Services.AddSingleton<IOpcUaClient>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<OpcUaClientMock>>();
+            return new OpcUaClientMock(logger);
+        });
 
         Configure<AbpSequentialGuidGeneratorOptions>(options =>
         {
